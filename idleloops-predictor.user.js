@@ -2,7 +2,7 @@
 // @name         IdleLoops Predictor Makro
 // @namespace    https://github.com/MakroCZ/
 // @downloadURL  https://raw.githubusercontent.com/MakroCZ/IdleLoops-Predictor/master/idleloops-predictor.user.js
-// @version      2.4.4
+// @version      2.4.5
 // @description  Predicts the amount of resources spent and gained by each action in the action list. Valid as of IdleLoops v.2.9/lloyd.
 // @author       Koviko <koviko.net@gmail.com>
 // @match        https://lloyd-delacroix.github.io/omsi-loops/
@@ -1067,7 +1067,7 @@ const Koviko = {
           effect:(r, k) => k.chronomancy += 100},
         'Looping Potion':{ affected:['herbs','lpotions'],
           canStart:(input) => (input.herbs>=400),
-          effect:(r, k) => (r.herbs -= 400, r.lpotions++, k.alchemy += 100)},
+          effect:(r, k) => (r.herbs -= 400, r.lpotions=1, k.alchemy += 100)},
         'Pyromancy':{ affected:[''],
           effect:(r, k) => k.pyromancy += 100*(1+getBuffLevel("Heroism") * 0.02)},
         'Explore Cavern':{ affected:['']},
@@ -1471,7 +1471,7 @@ const Koviko = {
           },
           effect:{ end:(r,k) => (k.combat+=250*(1+getBuffLevel("Heroism") * 0.02),k.pyromancy+=50*(1+getBuffLevel("Heroism") * 0.02),k.restoration+=50*(1+getBuffLevel("Heroism") * 0.02)), loop:(r) => {
             r.godFloor=(r.godFloor||0)+1;
-            if (r.godFloor>=100) {
+            if (r.godFloor==99) {
               r.power=1;
             }
           }}

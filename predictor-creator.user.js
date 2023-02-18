@@ -1539,7 +1539,7 @@ creatorCache['Looping Potion'].effect.game=\`finish() {
         addResource("loopingPotion", true);
         handleSkillExp(this.skills);
     }\`;
-creatorCache['Looping Potion'].effect.pred=\`(r, k) => (r.herbs -= 400, r.lpotions++, k.alchemy += 100)\`;
+creatorCache['Looping Potion'].effect.pred=\`(r, k) => (r.herbs -= 400, r.lpotions=1, k.alchemy += 100)\`;
 creatorCache['Pyromancy']={};
 creatorCache['Pyromancy'].affected=[''];
 creatorCache['Pyromancy'].manaCost={};
@@ -3011,7 +3011,7 @@ creatorCache['Gods Trial'].loop.loop.game=\`function() {
 }\`;
 creatorCache['Gods Trial'].loop.loop.pred=\`(r) => {
             r.godFloor=(r.godFloor||0)+1;
-            if (r.godFloor>=100) {
+            if (r.godFloor==99) {
               r.power=1;
             }
           }\`;
