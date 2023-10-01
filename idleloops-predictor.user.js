@@ -261,7 +261,7 @@ const Koviko = {
      */
     init(attributes) {
       for (let i in attributes) {
-        this.attributes[i] = { value: attributes[i], delta: 0 };
+        this.attributes[i] = { value: attributes[i], delta: 0};
       }
 
       this._isInitialized = true;
@@ -965,7 +965,6 @@ const Koviko = {
           cost:(p) => segment => 1000000 * (segment * 2 + 1),
           tick:(p, a, s, k) => offset => {
             let attempt = Math.floor(p.completed / a.segments + .0000001);
-
             return attempt < 1 ? ( getSkillLevelFromExp(k.dark) * h.getStatProgress(p, a, s, offset)) / (1 - towns[1].getLevel("Witch") * .005) : 0;
           },
           effect:{loop:(r) => {
@@ -1096,7 +1095,6 @@ const Koviko = {
           cost:(p) => segment => 100000000 * (segment * 5 + 1),
           tick:(p, a, s, k) => offset => {
             let attempt = Math.floor(p.completed / a.segments + .0000001);
-
             return attempt < 1 ? ( getSkillLevelFromExp(k.magic) * h.getStatProgress(p, a, s, offset)) : 0;
           },
           effect:{loop:(r) => {
@@ -1588,7 +1586,8 @@ const Koviko = {
           talents:  Koviko.globals.statList.reduce((talents, name) => (talents[name] = stats[name].talent, talents), {}),
           skills: Object.entries(Koviko.globals.skills).reduce((skills, x) => (skills[x[0].toLowerCase()] = x[1].exp, skills), {}),
           progress: {},
-          currProgress: {}
+          currProgress: {},
+          toNextLoop: {}
         };
         if (Koviko.options.slowMode) {
           this.initState=structuredClone(state);
@@ -1616,7 +1615,9 @@ const Koviko = {
         stats: new Koviko.Snapshot(state.stats),
         skills: new Koviko.Snapshot(state.skills),
         currProgress: new Koviko.Snapshot({"Fight Monsters": 0, "Heal The Sick": 0, "Small Dungeon": 0, "Large Dungeon": 0, "Hunt Trolls": 0, "Tidy Up":0,"Fight Frost Giants":0, "The Spire":0, "Fight Jungle Monsters":0,"Rescue Survivors":0,"Heroes Trial":0,
-          "Dead Trial":0, "Secret Trial":0, "Gods Trial":0, "Challenge Gods":0})
+          "Dead Trial":0, "Secret Trial":0, "Gods Trial":0, "Challenge Gods":0}),
+        toNextLoop: new Koviko.Snapshot({"Fight Monsters": 0, "Heal The Sick": 0, "Small Dungeon": 0, "Large Dungeon": 0, "Hunt Trolls": 0, "Tidy Up":0,"Fight Frost Giants":0, "The Spire":0, "Fight Jungle Monsters":0,"Rescue Survivors":0,"Heroes Trial":0,
+          "Dead Trial":0, "Secret Trial":0, "Gods Trial":0, "Challenge Gods":0, "Dark Ritual":0, "Imbue Mind":0, "Imbue Body":0})
       };
 
       /**
@@ -1822,8 +1823,11 @@ const Koviko = {
             }
 
 
-            if(prediction.name in state.progress)
+            if(prediction.name in state.progress) {
               state.currProgress[prediction.name] = state.progress[prediction.name].completed / prediction.action.segments;
+              state.toNextLoop[prediction.name] = state.progress[prediction.name].progress!=0?state.progress[prediction.name].progress/state.progress[prediction.name].loopTotalCost:0;
+            }
+
             // Update the cache
             if(i!==finalIndex) this.cache.add([listedAction.name, listedAction.loops, listedAction.disabled], [state, total, isValid]);
 
@@ -2002,6 +2006,7 @@ const Koviko = {
       let stats = snapshots.stats.get();
       let skills = snapshots.skills.get();
       let currProgress = snapshots.currProgress.get();
+      let toNextLoop = snapshots.toNextLoop.get();
       let tooltip = '<tr><th colspan="3"><b>' + currname + '</b></th><tr>';
 
       for (let i in stats) {
@@ -2092,6 +2097,9 @@ const Koviko = {
           tooltip += '</b></td><td>' + intToString(level.end, 1) + '</td><td>(+' + intToString(level.end - level.start, 1) + ')</td></tr>';
         }
       }
+      if (toNextLoop[currname] && toNextLoop[currname].value>0){
+          tooltip += '<tr><td><b>NEXT</b><td>' +Math.floor(toNextLoop[currname].value*10000)/100 +'%</td><td></td></tr>';
+      }
       //Timer
       tooltip+= '<tr><td><b>TIME</b></td><td>' + precision3(resources.totalTicks/50, 1) + '</td><td>(+' + precision3(resources.actionTicks/50, 1) + ')</td></tr>';
 
@@ -2133,9 +2141,13 @@ const Koviko = {
         // Helper for caching cost Calculations
         if (!progression.costList) {
           progression.costList=[];
+
+          var loopTotalCost = 0;
           for (let i=0; i<totalSegments ; i++ ) {
             progression.costList[i]=loopCost(i);
+            loopTotalCost +=loopCost(i);
           }
+          progression.loopTotalCost = loopTotalCost;
         }
         /**
          * Current segment within the loop
@@ -2180,12 +2192,19 @@ const Koviko = {
             // Store remaining progress in next loop if next loop is allowed
             if (progression.completed < maxSegments) {
               progression.progress = progress;
+              var loopTotalCost = 0;
               //Helper for  caching cost Calculations
               for (let i=0;i<totalSegments;i++) {
                 progression.costList[i]=loopCost(i);
+                loopTotalCost += loopCost(i);
               }
+              progression.loopTotalCost = loopTotalCost
             }
           }
+
+          //console.log(prediction.name)
+          //console.dir(prediction)
+         // console.dir(progression)
 
           // Apply the effect from the completion of a segment
           if (prediction.loop.effect.segment) {
