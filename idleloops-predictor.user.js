@@ -2202,10 +2202,6 @@ const Koviko = {
             }
           }
 
-          //console.log(prediction.name)
-          //console.dir(prediction)
-         // console.dir(progression)
-
           // Apply the effect from the completion of a segment
           if (prediction.loop.effect.segment) {
             prediction.loop.effect.segment(state.resources, state.skills);
